@@ -1800,6 +1800,17 @@ const layer = Layer.effect(
         options["fetch"] = async (input: any, init?: BunFetchRequestInit) => {
           const fetchFn = customFetch ?? fetch
           const opts = init ?? {}
+          // Transform max_tokens to max_completion_tokens for Azure OpenAI compatibility
+          if (opts.body && typeof opts.body === "string") {
+            try {
+              const body = JSON.parse(opts.body)
+              if ("max_tokens" in body && !("max_completion_tokens" in body)) {
+                body.max_completion_tokens = body.max_tokens
+                delete body.max_tokens
+                opts.body = JSON.stringify(body)
+              }
+            } catch {}
+          }
           const chunkAbortCtl = typeof chunkTimeout === "number" && chunkTimeout > 0 ? new AbortController() : undefined
           const headerTimeoutMs = headerTimeout === false ? undefined : headerTimeout
           const headerTimeoutCtl = typeof headerTimeoutMs === "number" ? timeoutController(headerTimeoutMs) : undefined

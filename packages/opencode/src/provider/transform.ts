@@ -1339,12 +1339,19 @@ export function options(input: {
 
   if (input.model.api.id.includes("gpt-5") && !input.model.api.id.includes("gpt-5-chat")) {
     if (!input.model.api.id.includes("gpt-5-pro")) {
-      result["reasoningEffort"] = "medium"
+      // Skip reasoning defaults for OpenAI-compatible proxy routes (e.g., Portkey/Azure).
+      // These providers reject reasoning_effort on chat/completions when tools are present.
+      const isOpenAICompatible = input.model.api.npm === "@ai-sdk/openai-compatible"
+      if (!isOpenAICompatible) {
+        result["reasoningEffort"] = "medium"
+      }
       if (
-        input.model.api.npm === "@ai-sdk/openai" ||
-        input.model.api.npm === "@ai-sdk/azure" ||
-        input.model.api.npm === "@ai-sdk/github-copilot" ||
-        input.model.api.npm === "@ai-sdk/amazon-bedrock/mantle"
+        !isOpenAICompatible && (
+          input.model.api.npm === "@ai-sdk/openai" ||
+          input.model.api.npm === "@ai-sdk/azure" ||
+          input.model.api.npm === "@ai-sdk/github-copilot" ||
+          input.model.api.npm === "@ai-sdk/amazon-bedrock/mantle"
+        )
       ) {
         result["reasoningSummary"] = "auto"
       }
