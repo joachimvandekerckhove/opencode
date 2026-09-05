@@ -1800,8 +1800,9 @@ const layer = Layer.effect(
         options["fetch"] = async (input: any, init?: BunFetchRequestInit) => {
           const fetchFn = customFetch ?? fetch
           const opts = init ?? {}
-          // Transform max_tokens to max_completion_tokens for Azure OpenAI compatibility
-          if (opts.body && typeof opts.body === "string") {
+          // Transform max_tokens to max_completion_tokens for OpenAI-compatible proxy routes only.
+          // Bedrock/Anthropic and native OpenAI SDKs still require max_tokens.
+          if (model.api.npm.includes("@ai-sdk/openai-compatible") && opts.body && typeof opts.body === "string") {
             try {
               const body = JSON.parse(opts.body)
               if ("max_tokens" in body && !("max_completion_tokens" in body)) {
