@@ -14,9 +14,9 @@ These fixes are scoped to only affect `openai-compatible` proxy routes, preservi
 
 ## Quick Install
 
-### Option 1: Pre-built Binary (Linux x64)
+### Option 1: Pre-built Binary (Linux x64) — recommended
 
-Download the latest release from this fork:
+Download the latest release from this fork (verified `opencode run` binary):
 
 ```bash
 curl -fsSL https://github.com/joachimvandekerckhove/opencode/releases/latest/download/opencode-linux-x64.zip -o opencode.zip
@@ -25,17 +25,21 @@ chmod +x opencode
 sudo mv opencode /usr/local/bin/  # or ~/.local/bin/
 ```
 
+Also copy to `~/.opencode/bin/opencode` if you previously used the official install script.
+
 ### Option 2: Build from Source
 
-Requires [Bun](https://bun.sh) 1.3+:
+Requires [Bun](https://bun.sh) 1.3+. Use the fork compile script (do **not** use plain `bun build --compile` or stock `script/build.ts --single` for a runnable CLI — see [Building notes](#building-notes)):
 
 ```bash
 git clone https://github.com/joachimvandekerckhove/opencode.git
 cd opencode
+git checkout dev
 bun install
-cd packages/opencode
-bun build --compile src/index.ts --outfile=opencode
-sudo mv opencode /usr/local/bin/  # or ~/.local/bin/
+bun packages/opencode/script/compile-local.ts
+cp packages/opencode/dist/opencode-linux-x64-local/bin/opencode ~/.local/bin/opencode
+# optional if the official installer left a shim:
+cp packages/opencode/dist/opencode-linux-x64-local/bin/opencode ~/.opencode/bin/opencode
 ```
 
 ### Option 3: Use Original Install Script
@@ -50,6 +54,16 @@ curl -fsSL https://opencode.ai/install | bash
 cp /path/to/your/patched/opencode ~/.opencode/bin/opencode
 ```
 
+## Building notes
+
+| Method | Result |
+|--------|--------|
+| `bun packages/opencode/script/compile-local.ts` | Working local binary (Solid plugin, **no minify / no splitting**) |
+| Release asset `opencode-linux-x64.zip` | Same recipe; use this unless you need to rebuild |
+| `bun build --compile src/index.ts` | Fails: missing `@opentui/solid/preload` |
+| `./packages/opencode/script/build.ts --single` | `--version` may work, but `opencode run` can crash in `SystemPrompt.environment` (`TypeError: undefined is not an object (evaluating 'a.name')`) because of minify + splitting |
+
+The `max_tokens` → `max_completion_tokens` rewrite is scoped to `@ai-sdk/openai-compatible` only (`packages/opencode/src/provider/provider.ts`), so Bedrock/Anthropic routes keep `max_tokens`.
 ## Configuration for ZotGPT Gateway
 
 Create an `opencode.json` config file:
